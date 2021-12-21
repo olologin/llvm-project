@@ -15,6 +15,7 @@
 #define KMP_H
 
 #include "kmp_config.h"
+#include <sanitizer/msan_interface.h>
 
 /* #define BUILD_PARALLEL_ORDERED 1 */
 
@@ -1274,6 +1275,7 @@ static inline void __kmp_load_x87_fpu_control_word(const kmp_int16 *p) {
 // Store FPU control word into p
 static inline void __kmp_store_x87_fpu_control_word(kmp_int16 *p) {
   __asm__ __volatile__("fstcw %0" : "=m"(*p));
+  __msan_unpoison(p, sizeof(kmp_int16));
 }
 static inline void __kmp_clear_x87_fpu_status_word() {
 #if KMP_MIC
