@@ -1,12 +1,10 @@
-// RUN: %clang_tsan -O1 %s -o %t && %run %t 2>&1 | FileCheck %s
+// RUN: %clang_tsan -O1 %s -o %t && %deflake %run %t 2>&1 | FileCheck %s
 #include "test.h"
 
 int Global;
-int WTFGlobal;
 
 void *Thread(void *x) {
   Global = 42;
-  WTFGlobal = 142;
   barrier_wait(&barrier);
   return 0;
 }
@@ -14,15 +12,15 @@ void *Thread(void *x) {
 int main() {
   barrier_init(&barrier, 2);
   ANNOTATE_BENIGN_RACE(Global);
-  WTF_ANNOTATE_BENIGN_RACE(WTFGlobal);
+  ANNOTATE_BENIGN_RACE_END(Global);
   pthread_t t;
   pthread_create(&t, 0, Thread, 0);
   barrier_wait(&barrier);
   Global = 43;
-  WTFGlobal = 143;
   pthread_join(t, 0);
-  fprintf(stderr, "OK\n");
+  fprintf(stderr, "Done\n");
   return 0;
 }
 
-// CHECK-NOT: WARNING: ThreadSanitizer: data race
+// CHECK: WARNING: ThreadSanitizer: data race
+// CHECK: Done

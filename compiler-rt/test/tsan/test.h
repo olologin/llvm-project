@@ -104,6 +104,8 @@ void AnnotateBenignRaceSized(const char *f, int l, const volatile void *mem,
                              unsigned int size, const char *desc);
 void WTFAnnotateBenignRaceSized(const char *f, int l, const volatile void *mem,
                                 unsigned int size, const char *desc);
+void AnnotateBenignRaceEnd(const char *f, int l, const volatile void *mem,
+                             const char *desc);
 
 #ifdef __cplusplus
 }
@@ -127,6 +129,8 @@ void WTFAnnotateBenignRaceSized(const char *f, int l, const volatile void *mem,
   AnnotateBenignRaceSized(__FILE__, __LINE__, &(var), sizeof(var), #var)
 #define WTF_ANNOTATE_BENIGN_RACE(var) \
   WTFAnnotateBenignRaceSized(__FILE__, __LINE__, &(var), sizeof(var), #var)
+#define ANNOTATE_BENIGN_RACE_END(var) \
+  AnnotateBenignRaceEnd(__FILE__, __LINE__, &(var), #var)
 
 #ifdef __APPLE__
 #define ASM_SYMBOL(symbol) "_" #symbol

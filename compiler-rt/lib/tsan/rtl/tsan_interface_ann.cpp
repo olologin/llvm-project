@@ -108,6 +108,24 @@ static void AddExpectRace(ExpectRace *list,
   list->next = race;
 }
 
+static bool RemoveExpectRace(ExpectRace *list, uptr addr) {
+  ExpectRace *foundRace = 0;
+  for (ExpectRace *race = list->next; race != list; race = race->next) {
+    if (race->addr == addr) {
+      foundRace = race;
+      break;
+    }
+  }
+  if (foundRace == 0)
+    return false;
+
+  foundRace->next->prev = foundRace->prev;
+  foundRace->prev->next = foundRace->next;
+  FreeImpl(static_cast<void*>(foundRace));
+  return true;
+}
+
+
 static ExpectRace *FindRace(ExpectRace *list, uptr addr, uptr size) {
   for (ExpectRace *race = list->next; race != list; race = race->next) {
     uptr maxbegin = max(race->addr, addr);
@@ -264,6 +282,20 @@ void INTERFACE_ATTRIBUTE AnnotateBenignRace(
     char *f, int l, uptr mem, char *desc) {
   SCOPED_ANNOTATION(AnnotateBenignRace);
   BenignRaceImpl(f, l, mem, 1, desc);
+}
+
+void INTERFACE_ATTRIBUTE AnnotateBenignRaceEnd(
+    char *f, int l, uptr mem, char* desc) {
+  SCOPED_ANNOTATION(AnnotateBenignRaceEnd);
+  Lock lock(&dyn_ann_ctx->mtx);
+  if(RemoveExpectRace(&dyn_ann_ctx->benign, mem))
+  {
+    DPrintf("Remove benign race: %s addr=%zx %s:%d\n", desc, mem, f, l);
+  }
+  else
+  {
+    DPrintf("Failed to remove benign race: %s addr=%zx %s:%d\n", desc, mem, f, l);
+  }
 }
 
 void INTERFACE_ATTRIBUTE AnnotateIgnoreReadsBegin(char *f, int l) {
